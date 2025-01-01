@@ -1,46 +1,51 @@
-name: build-and-release
+name: Build and Test MiSTerCast
+
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: windows-latest
 
+    env:
+      ROOT_DIR: ${{ github.workspace }}
+
     steps:
-    - name: Checkout Repository
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install Dependencies
-      run: |
-        choco install visualstudio2017buildtools --version 15.9.28307.1238
-        choco install visualstudio2017-workload-vctools
-        choco install visualstudio2017-workload-manageddesktopbuildtools
-        choco install wget
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
 
-    - name: Setup LZ4 Library
+    - name: Install dependencies
+      run: |
+        choco install wget unzip -y
+
+    - name: Download and extract LZ4
       run: |
         wget https://github.com/lz4/lz4/archive/refs/tags/v1.9.3.zip -O lz4.zip
-        unzip lz4.zip -d External/lz4
-        mkdir -p External/lz4/dll
-        cp External/lz4/lz4-1.9.3/dll/msys-lz4-1.dll External/lz4/dll/msys-lz4-1.dll
-        cp External/lz4/lz4-1.9.3/dll/liblz4.dll.a External/lz4/dll/liblz4.dll.a
+        unzip lz4.zip -d ${{ env.ROOT_DIR }}/External/lz4
+        mkdir -p ${{ env.ROOT_DIR }}/External/lz4/dll
+        find ${{ env.ROOT_DIR }} -name "msys-lz4-1.dll" -exec cp {} ${{ env.ROOT_DIR }}/External/lz4/dll/msys-lz4-1.dll \;
+        find ${{ env.ROOT_DIR }} -name "liblz4.dll.a" -exec cp {} ${{ env.ROOT_DIR }}/External/lz4/dll/liblz4.dll.a \;
 
-    - name: Build Solution
-      run: |
-        msbuild FrontEnd/MiSTerCast.sln /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v141
+    - name: Build MiSTerCast
+      run: msbuild FrontEnd/MiSTerCast.sln /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v141
 
-    - name: Upload Build Artifacts
+    - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: MiSTerCast-Release
+        name: MiSTerCast-Binaries
         path: FrontEnd/bin/Release/
 
-    - name: Generate Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: FrontEnd/bin/Release/MiSTerCast.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Test Build
+      run: |
+        if (-Not (Test-Path -Path ${{ env.ROOT_DIR }}/FrontEnd/bin/Release/MiSTerCast.exe)) {
+          Write-Error "Build failed: Executable not found"
+          exit 1
+        }
