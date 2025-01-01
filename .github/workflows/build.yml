@@ -18,7 +18,9 @@ jobs:
       run: |
         choco install visualstudio2022buildtools --force
         choco install visualstudio2022-workload-nativedesktop --force
+        choco install visualstudio2022-workload-vctools --force
         choco install vcredist140 --force
+        choco install netfx-4.6.1-devpack --force
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.3
