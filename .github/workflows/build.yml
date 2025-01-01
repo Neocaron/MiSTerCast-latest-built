@@ -21,6 +21,13 @@ jobs:
         choco install netfx-4.6.1-devpack --force
         choco install vcredist140 --force
 
+    - name: Download LZ4 Library
+      run: |
+        curl -L https://github.com/lz4/lz4/archive/refs/tags/v1.9.3.zip -o lz4.zip
+        unzip lz4.zip -d External/lz4
+        mkdir -p External/lz4/include
+        cp -r External/lz4/lz4-1.9.3/lib/* External/lz4/include/
+
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.3
 
