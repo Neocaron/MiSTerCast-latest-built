@@ -16,21 +16,20 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        choco install visualstudio2022buildtools --force
-        choco install visualstudio2022-workload-nativedesktop --force
-        choco install visualstudio2022-workload-vctools --force
-        choco install vcredist140 --force
+        choco install visualstudio2017buildtools --force
+        choco install visualstudio2017-workload-vctools --force
         choco install netfx-4.6.1-devpack --force
+        choco install vcredist140 --force
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.3
 
     - name: Build Solution
       run: |
-        msbuild FrontEnd/MiSTerCast.sln /p:Configuration=Release /p:Platform=x86
+        msbuild FrontEnd/MiSTerCast.sln /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v141
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: MiSTerCast-Binaries
-        path: '**/Release/*.exe'
+        path: '**/bin/Release/*'
